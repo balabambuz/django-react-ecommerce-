@@ -53,6 +53,29 @@ def registerUser(request):
         message = {'detail':'User with this email already exists'}#riporta questo
         return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def updateUserProfile(request):#dalla request ricevo l'utente nel BE + l'utente inserito nel FE
+    user= request.user
+    serializer = UserSerializerWithToken(user, many=False)
+
+    data = request.data
+    #AGGIORNO I VALORI DELL'ISTANZA
+    user.first_name = data['name']
+    user.username = data['email']
+    user.email = data['email']
+    #SEl'utente ha inserito qualcosa nell'input rifaccio l'hashing della password
+    if data['password'] != '':
+        user.password = make_password(data['password'])
+    
+    user.save()
+
+    return Response(serializer.data)
+
+
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getUserProfile(request):
@@ -67,5 +90,4 @@ def getUsers (request):
     users = User.objects.all() ##per farlo funzionare ho bisogno di User inteso come modello quindi l'ho importato
     serializer = UserSerializer(users, many=True)
     return Response(serializer.data)
-
-
+    

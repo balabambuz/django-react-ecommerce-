@@ -36,7 +36,7 @@ class UserSerializerWithToken(UserSerializer):      #REFRESHA  il token di autor
 
     def get_token(self, obj):
         token = RefreshToken.for_user(obj)#obj è l'utente, quindi è il token personale dell'user
-        return str(token.access_token)    
+        return str(token.access_token)#invece di ritornare un refresh da un access   
 
 
 class ProductSerializer(serializers.ModelSerializer):
