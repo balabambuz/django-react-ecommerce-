@@ -53,7 +53,7 @@ function Header() {
 
             
               <LinkContainer to='/about_me'>
-                <Nav.Link><i className="fa-solid fa-user px-1"></i>About_me</Nav.Link>
+                <Nav.Link><i className="fa-solid fa-user px-1"></i>About_me2</Nav.Link>
               </LinkContainer>
 
               <LinkContainer to='/works'>
