@@ -10,18 +10,19 @@ from base.serializers import ProductSerializer, OrderSerializer
 
  
 from rest_framework import status
+from datetime import datetime
 
 @api_view(['POST']) #l'API view si aspetta una  quindi []
-#@permission_classes(['IsAuthenticated'])
+@permission_classes([IsAuthenticated])
 def addOrderItems(request):
-    user = request.user
-    data = request.data #dalla request triggerata nel frontend prendo i dati
+   user = request.user
+   data = request.data #dalla request triggerata nel frontend prendo i dati
 
-    orderItems = data['orderItems']#dal pacchetto prendo quello che mi serve
+   orderItems = data['orderItems']#dal pacchetto prendo quello che mi serve
 
-    if orderItems and len(orderItems) == 0:
+   if orderItems and len(orderItems) == 0:
         return Response({'detail':'No Order Items'}, status=status.HTTP_400_BAD_REQUEST)
-    else: 
+   else: 
 
          #(1) crea l'ordine
 
@@ -40,7 +41,7 @@ def addOrderItems(request):
             city=data['shippingAddress']['city'],
             postalCode=data['shippingAddress']['postalCode'],
             country=data['shippingAddress']['country'],
-            
+            #questo campo presenta anche il valore ShippingPrice ma non sono obbligato a compilarlo 
             
          )
          #(3) crea OrderItems e setta l'Order in relazione con OrderItems
@@ -64,3 +65,68 @@ def addOrderItems(request):
    
          serializer = OrderSerializer(order, many=False)
          return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def getMyOrders(request):
+   user = request.user
+   orders = user.order_set.all()
+   serializer = OrderSerializer(orders, many=True)
+   return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def getOrders(request):
+   orders = Order.objects.all()
+   serializer = OrderSerializer(orders, many=True)
+   return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def getOrderById(request, pk):
+
+   user = request.user #La richiesta HTTP conserva al suo interno anche le informazionni relative all'utente
+
+   try:
+         order = Order.objects.get(_id=pk)
+         
+         if user.is_staff or order.user == user:
+            serializer = OrderSerializer(order, many=False)
+            return Response(serializer.data)
+         else:
+            Response({'detail':'Not authorized to view this order'},
+                     status=status.HTTP_400_BAD_REQUEST)
+   
+   except:
+      return Response({'detail': 'Order does not exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def updateOrderToPaid(request, pk):
+   order = Order.objects.get(_id=pk)
+
+   order.isPaid = True
+   order.paidAt = datetime.now()
+   order.save()
+   
+   return Response('Order was paid')
+
+
+
+
+@api_view(['PUT'])
+@permission_classes([IsAdminUser])
+def updateOrderToDelivered(request, pk):
+   order = Order.objects.get(_id=pk)
+
+   order.isDelivered = True
+   order.deliveredAt = datetime.now()
+   order.save()
+   
+   return Response('Order was delivered')
+
+
+

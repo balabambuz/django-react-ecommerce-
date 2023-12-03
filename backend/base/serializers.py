@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import Product, Order, OrderItem, ShippingAddress
+from .models import Product, Order, OrderItem, ShippingAddress, Review, Post, Work
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -39,10 +39,23 @@ class UserSerializerWithToken(UserSerializer):      #REFRESHA  il token di autor
         return str(token.access_token)#invece di ritornare un refresh da un access   
 
 
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = '__all__'
+
+
 class ProductSerializer(serializers.ModelSerializer):
+    reviews = serializers.SerializerMethodField(read_only=True) #è un serializzatore all'interno di un altro
+
     class Meta:
         model = Product
         fields = '__all__'
+    
+    def get_reviews(self, obj):
+        reviews = obj.review_set.all()
+        serializer = ReviewSerializer(reviews, many=True)
+        return serializer.data
 
 
 class ShippingAddressSerializer(serializers.ModelSerializer):
@@ -73,17 +86,34 @@ class OrderSerializer(serializers.ModelSerializer):#nested object from class
     
     def get_shippingAddress(self, obj):
         try:
-            address =  ShippingAddressSerializer(obj.shippingAddress, many=False)
+            address =  ShippingAddressSerializer(obj.shippingaddress, many=False).data #relazione di attributo inversa
         except:
             address =  False
         return address
 
     def get_user(self, obj):
         user = obj.user
-        serializer = UserSerializer(user, many=True)
+        serializer = UserSerializer(user, many=False)
         return serializer.data
+
+
+class PostSerializer(serializers.ModelSerializer):
+
+    username = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Post
+        fields = '__all__'
+
+    def get_username(self, obj):
+        return obj.user.first_name if obj.user else ''
         
 
+class WorkSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Work
+        fields = '__all__'
 
 
 

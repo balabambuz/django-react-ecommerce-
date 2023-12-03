@@ -90,4 +90,46 @@ def getUsers (request):
     users = User.objects.all() ##per farlo funzionare ho bisogno di User inteso come modello quindi l'ho importato
     serializer = UserSerializer(users, many=True)
     return Response(serializer.data)
+
+#ottengo gli utenti dalla dashboard dell'admin
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def getUserById(request, pk):
+    user = User.objects.get(id=pk) 
+    serializer = UserSerializer(user, many=False)#se uso userSerializer avrò in PostMan il Json senza TOKEN
+    return Response(serializer.data)
+
+
+#modifico gli utenti dalla sezione dell'Admin
+
+@api_view(['PUT'])
+@permission_classes([IsAdminUser])
+def updateUser(request, pk):
+    user= User.objects.get(id=pk)
+
+    data = request.data
+    
+    user.first_name = data['name']
+    user.username = data['email']
+    user.email = data['email']
+    user.is_staff = data['isAdmin']
+    
+    serializer = UserSerializer(user, many=False)
+    
+    user.save()
+
+    return Response(serializer.data)
+
+    
+
+@api_view(['DELETE'])
+@permission_classes([IsAdminUser])
+def deleteUser(request, pk):
+    userForDeletion = User.objects.get(id=pk)
+    userForDeletion.delete()
+    return Response('User was deleted')
+
+
+
     

@@ -9,11 +9,14 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -25,7 +28,7 @@ SECRET_KEY = 'django-insecure-cd%imteuox3xi6z0%ya235(+(a%+c=fk5-s4&yz(26wcsw8e^-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -40,6 +43,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'corsheaders',
+    'storages',
     
     'base.apps.BaseConfig',
 ]
@@ -94,7 +98,9 @@ SIMPLE_JWT = {
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 
+    
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -109,7 +115,9 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'frontend/build')
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -130,9 +138,13 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'notsmoke',
+        'USER': 'postgres',
+        'PASSWORD': os.environ.get("DB_PASS"),
+        'HOST': 'notsmoke-identifier.csm8cxkddyoy.us-east-1.rds.amazonaws.com',
+        'PORT': '5432'
+    }   
 }
 
 
@@ -155,6 +167,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
@@ -170,14 +184,29 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = 'static/'
-MEDIA_URL = '/images/'
+STATIC_URL = '/static/'
+MEDIA_URL = '/images/' #prende le immagini da qui
 
 STATICFILES_DIRS = [
-    BASE_DIR / 'static'
+     os.path.join(BASE_DIR / 'static'),
+    os.path.join(BASE_DIR / 'frontend/build/static'),
+    
+    
 ]
 
-MEDIA_ROOT = 'static/images'
+MEDIA_ROOT = BASE_DIR / 'static/images'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+AWS_QUERYSTRING_AUTH = False #nasconde dall'url la userAccessKey di amazon
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+
+AWS_STORAGE_BUCKET_NAME = 'notsmoke-bucket'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -187,3 +216,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 
 #print( "base dir path", BASE_DIR)
+
+if os.getcwd() == '/app' : #capisce immediatamente se il codice è in produzione o sviluppo 
+    DEBUG = False          #per evitare di perdere tempo ogni volta
